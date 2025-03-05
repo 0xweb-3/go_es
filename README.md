@@ -1,2 +1,6 @@
-# go_es
-go_es
+# go_elasticsearch
+https://github.com/golang-standards/project-layout
+
+
+
+

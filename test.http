@@ -1,0 +1,114 @@
+GET _cat/indices
+
+## 数据写入失败，但是也会创建索引
+PUT test_index/_doc/1
+
+{
+    "string_field": "imooc",
+    "int_field": 100,
+    "float_field":3.14,
+    "bool_field" :true,
+    "date_field" : "2022/03/16",
+    "obj_field": {"key1": "value1", "key2":100}, # 推断类型会一层层组合
+    "array_field1": ["100", 3.14], # 这里导致错误，两种类型的混合
+    "array_field2" : [100, "200"],  # 这里一个数字  一个字符串
+    "array_field3": ["100", "2022/03/16"], # 后面这个被识别为日期类型，也会报错
+    "array_field4": ["2022/03/16"],
+    "null_field" :null # 不会被加到mapping中
+}
+
+## 查看索引
+GET _cat/indices   # 会看到test_index索引
+
+GET test_index/_mapping
+# 返回是空的
+{
+  "test_index": {
+    "mappings": {}
+  }
+}
+
+# 修改后可以插入的版本
+PUT test_index/_doc/1
+
+{
+    "string_field": "imooc",
+    "int_field": 100,
+    "float_field":3.14,
+    "bool_field" :true,
+    "date_field" : "2022/03/16",
+    "obj_field": {"key1": "value1", "key2":100},
+    "array_field1": [100.00, 3.14],
+    "array_field2" : [100, 200],
+    "array_field3": ["100", "2022"],
+    "array_field4": ["2022/03/16"],
+    "null_field" :null
+}
+
+# 检查最后推断出的类型
+GET test_index/_mapping
+
+# 会打印出es版本
+GET /
+
+GET _cat/indices
+
+DELETE test_index
+
+# 将Dynamic设置为false
+PUT test_index
+{
+ "mappings": {
+ "dynamic": false
+}
+}
+
+GET test_index/_mapping
+
+# 插入数据
+POST test_index/_doc/2
+{
+ "field1" : {
+ "field2":"imooc ES"
+ }
+}
+
+# 搜索数据
+GET test_index/_search
+{
+"query": {
+ "term": {
+ "field1.field2": { "value": "imooc ES"}
+}}}
+
+
+# 获取数据
+GET test_index/_doc/2
+
+# 设置白名单
+PUT _cluster/settings
+{
+"persistent":
+{
+"action.auto_create_index":".security, .kibana*, .monitoring *, .watches, .triggered_watches, .watcher-history*"
+}}
+
+PUT test_index
+{
+ "mappings": {
+ "dynamic": strict
+}
+}
+
+PUT test_index
+{
+ "mappings": {
+ "properties": {
+ "msg": {
+ "type": "flattened"
+ }}}
+}
+
+
+
+
